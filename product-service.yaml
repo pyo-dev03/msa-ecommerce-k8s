@@ -1,45 +1,4 @@
-# 1. Deployment:  상품 서비스 (v2.0)
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: product-deployment
-spec:
-  replicas: 1  # 1개의 파드 생성
-  selector:
-    matchLabels:
-      app: product-service  # 이 Deployment가 관리할 Pod의 라벨
-  template:  # Pod 템플릿 (Pod를 어떻게 만들지 정의)
-    metadata:
-      labels:
-        app: product-service  # Pod에 'app: product-service'라는 라벨을 붙임
-    spec:  
-      containers:
-        - name: product-service-container
-          image: vyjsjs/product-service:2.0  # 2.0 버전 이미지
-          ports:
-            - containerPort: 5050  # Flask 앱이 5050번 포트에서 실행 중
-
-          # 리소스 제한 
-          # 수정: 메모리 한도를 조금 더 늘려줌
-          resources:
-            requests:
-              memory: "128Mi"
-              cpu: "100m"
-            limits:
-              memory: "256Mi"  # 파이썬은 생각보다 메모리를 많이 쓸 수 있어서 늘려줌
-              cpu: "500m"
-
-          # Liveness Probe (헬스 체크)
-          livenessProbe:
-            httpGet:
-              path:  /products
-              port: 5050
-            initialDelaySeconds: 30  # 앱이 켜질 때까지 충분히 기다려줌
-            periodSeconds: 10
-            failureThreshold: 3  # 3번 실패해야 죽은 것으로 간주
---- 
-
-# 2. Service: "클러스터 내부에서 'product-service'라는 이름으로 Pod에 접근하게 해줘"
+# Service: "클러스터 내부에서 'product-service'라는 이름으로 Pod에 접근하게 해줘"
 apiVersion: v1
 kind: Service
 metadata:
@@ -47,7 +6,9 @@ metadata:
 spec:
   selector:
     app: product-service  # 'app: product-service' 라벨이 붙은 Pod와 연결
+    release: west  # [초기 설정] 현재는 West 파드로만 트래픽 전송
   ports:
-  - protocol: TCP
+  - name: service-port  # 서비스 자체의 포트 이름 (선택 사항)
+    protocol: TCP
     port: 5050  # 서비스가 5050번 포트로 요청을 받음
-    targetPort: 5050  # Pod의 5050번 포트로 요청을 전달
+    targetPort: http-flask  # 포트번호가 아닌 파드에 정의된 'http-flask'라는 포트 이름을 찾아감

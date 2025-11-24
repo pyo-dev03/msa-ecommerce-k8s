@@ -1,0 +1,40 @@
+# 1. Deployment:  상품 서비스 (v2.0)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-deployment-west
+spec:
+  replicas: 1  # 1개의 파드 생성
+  selector:
+    matchLabels:
+      app: product-service  # 이 Deployment가 관리할 Pod의 라벨
+      release: west  # West 식별 라벨
+  template:  # Pod 템플릿 (Pod를 어떻게 만들지 정의)
+    metadata:
+      labels:
+        app: product-service  # Pod에 'app: product-service'라는 라벨을 붙임
+        release: west
+    spec:  
+      containers:
+        - name: product-service-container
+          image: vyjsjs/product-service:2.0  # 2.0 버전 이미지
+          ports:
+            - name: http-flask  # 포트에 http-flask라는 이름을 부여
+              containerPort: 5050  # Flask 앱이 5050번 포트에서 실행 중
+
+          # 리소스 제한 
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+
+          # Liveness Probe (헬스 체크)
+          livenessProbe:
+            httpGet:
+              path:  /products
+              port: http-flask  # 포트 번호(5050) 대신 name 사용
+            initialDelaySeconds: 10  # 앱이 켜질 때까지 충분히 기다려줌
+            periodSeconds: 10
