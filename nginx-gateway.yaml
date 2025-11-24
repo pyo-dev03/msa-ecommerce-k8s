@@ -1,0 +1,46 @@
+# 1. Deployment: "NGINX 게이트웨이 (v2.0)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-gateway
+  template:  # Pod 템플릿
+    metadata:
+      labels:
+        app: nginx-gateway
+    spec:
+      containers:
+      - name: nginx-gateway-container
+        image: vyjsjs/nginx-gateway:2.0  # 2.0 버전 이미지
+        ports:
+        - containerPort: 80  # Nginx가 80번 포트에서 실행 중
+
+        # [수정] 리소스 제한
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "50m"
+          limits:
+            memory: "64Mi"
+            cpu: "100m"
+
+---
+
+# 2. Service: "외부에서 클러스터로 접근할 수 있는 통로를 열어줘"
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-gateway
+spec:
+  type: NodePort  # 클러스터 외부에서 접근할 수 있도록 포트를 개방
+  selector:
+    app: nginx-gateway  # 'app: nginx-gateway' 라벨이 붙은 Pod와 연결
+  ports:
+  - protocol: TCP
+    port: 80  # 서비스가 80번 포트로 요청을 받음
+    targetPort: 80  # Pod의 80번 포트로 요청을 전달
+    nodePort: 30080  # 외부에서 접속할 포트 (30000-32767 사이의 임의의 숫자)

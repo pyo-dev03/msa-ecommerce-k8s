@@ -1,0 +1,7 @@
+pycache
+.git
+.gitignore
+.DS_Store
+*.yaml
+*.md
+Dockerfile
